@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["sessions"],
     queryFn: () => trainingApi.getSessions(),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   return (
