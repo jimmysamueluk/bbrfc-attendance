@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Header } from "@/components/Header";
+import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { Loader2 } from "lucide-react";
 
 export default function ProtectedLayout({
@@ -49,7 +50,10 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Header onLogout={handleLogout} />
-      <main className="max-w-lg mx-auto px-4 py-4">{children}</main>
+      <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        <NotificationPrompt />
+        {children}
+      </main>
     </div>
   );
 }

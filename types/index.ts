@@ -18,10 +18,13 @@ export interface Team {
 export interface TrainingSession {
   id: number;
   sessionDate: string;
+  sessionTime?: string | null;
   sessionType?: string | null;
   description?: string | null;
   duration?: number | null;
   intensity?: number | null;
+  playerOfSessionId?: number | null;
+  playerOfSession?: { id: number; firstName: string; lastName: string } | null;
   team?: Team | null;
   coach?: { id: number; firstName: string; lastName: string };
   attendees?: TrainingAttendance[];
@@ -50,6 +53,11 @@ export interface PlayerStats {
   totalSessions: number;
   attendedSessions: number;
   attendanceRate: number;
+}
+
+export interface PlayerOfSessionStats {
+  player: { id: number; firstName: string; lastName: string };
+  awardCount: number;
 }
 
 export interface LoginResponse {

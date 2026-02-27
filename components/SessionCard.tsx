@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, Users, Clock } from "lucide-react";
+import { Calendar, Users, Clock, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 import type { TrainingSession } from "@/types";
@@ -22,13 +22,24 @@ export function SessionCard({ session }: SessionCardProps) {
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span>{formatDate(session.sessionDate)}</span>
+              <span>
+                {formatDate(session.sessionDate)}
+                {session.sessionTime && ` at ${session.sessionTime}`}
+              </span>
             </div>
             <p className="font-semibold text-gray-900 truncate">
               {session.sessionType || "Training"}
             </p>
             {session.team && (
               <p className="text-sm text-gray-500">{session.team.name}</p>
+            )}
+            {session.playerOfSession && (
+              <div className="flex items-center gap-1 text-xs text-gold">
+                <Star className="w-3 h-3 fill-gold" />
+                <span>
+                  {session.playerOfSession.firstName} {session.playerOfSession.lastName}
+                </span>
+              </div>
             )}
             {session.duration && (
               <div className="flex items-center gap-1 text-xs text-gray-400">

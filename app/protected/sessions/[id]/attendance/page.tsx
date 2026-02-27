@@ -3,12 +3,13 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, UserPlus, Save, CheckCheck } from "lucide-react";
+import { ArrowLeft, Loader2, UserPlus, Save, CheckCheck, Star } from "lucide-react";
 import { trainingApi } from "@/lib/api/training";
 import { usersApi } from "@/lib/api/users";
 import { PlayerToggleCard } from "@/components/PlayerToggleCard";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { AttendanceRecord } from "@/types";
 
 export default function AttendancePage({
@@ -21,6 +22,7 @@ export default function AttendancePage({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [attendance, setAttendance] = useState<Record<number, boolean>>({});
+  const [playerOfSessionId, setPlayerOfSessionId] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
   const { data: sessionData, isLoading: sessionLoading } = useQuery({
@@ -37,11 +39,9 @@ export default function AttendancePage({
   useEffect(() => {
     if (sessionData?.session?.attendees && players) {
       const existing: Record<number, boolean> = {};
-      // First set all players to absent
       players.forEach((p) => {
         existing[p.id] = false;
       });
-      // Then mark those with existing records
       sessionData.session.attendees.forEach((a) => {
         existing[a.playerId] = a.present;
       });
@@ -55,9 +55,16 @@ export default function AttendancePage({
     }
   }, [sessionData, players]);
 
+  // Initialize player of session from existing data
+  useEffect(() => {
+    if (sessionData?.session?.playerOfSessionId) {
+      setPlayerOfSessionId(sessionData.session.playerOfSessionId);
+    }
+  }, [sessionData]);
+
   const saveMutation = useMutation({
     mutationFn: (records: AttendanceRecord[]) =>
-      trainingApi.recordAttendance(sessionId, records),
+      trainingApi.recordAttendance(sessionId, records, playerOfSessionId),
     onSuccess: () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -67,7 +74,14 @@ export default function AttendancePage({
   });
 
   const handleToggle = (playerId: number) => {
-    setAttendance((prev) => ({ ...prev, [playerId]: !prev[playerId] }));
+    setAttendance((prev) => {
+      const newState = { ...prev, [playerId]: !prev[playerId] };
+      // If toggling off a player who is Player of Session, clear the selection
+      if (!newState[playerId] && playerOfSessionId === playerId) {
+        setPlayerOfSessionId(null);
+      }
+      return newState;
+    });
     setSaved(false);
   };
 
@@ -79,6 +93,7 @@ export default function AttendancePage({
       updated[p.id] = !allPresent;
     });
     setAttendance(updated);
+    if (allPresent) setPlayerOfSessionId(null);
     setSaved(false);
   };
 
@@ -94,6 +109,9 @@ export default function AttendancePage({
   const session = sessionData?.session;
   const isLoading = sessionLoading || playersLoading;
   const presentCount = Object.values(attendance).filter(Boolean).length;
+  const presentPlayers = players
+    ?.filter((p) => attendance[p.id])
+    .sort((a, b) => a.lastName.localeCompare(b.lastName));
 
   return (
     <div className="space-y-4">
@@ -110,6 +128,7 @@ export default function AttendancePage({
             <p className="text-sm text-gray-500">
               {session.sessionType || "Training"} &middot;{" "}
               {formatDate(session.sessionDate)}
+              {session.sessionTime && ` at ${session.sessionTime}`}
             </p>
           )}
         </div>
@@ -170,6 +189,40 @@ export default function AttendancePage({
                 />
               ))}
           </div>
+
+          {/* Player of the Session */}
+          {presentPlayers && presentPlayers.length > 0 && (
+            <div className="border-2 border-gold/30 bg-gold/5 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-gold fill-gold" />
+                <h2 className="font-semibold text-gray-900">Player of the Session</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {presentPlayers.map((player) => (
+                  <button
+                    key={player.id}
+                    onClick={() => {
+                      setPlayerOfSessionId(
+                        playerOfSessionId === player.id ? null : player.id
+                      );
+                      setSaved(false);
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                      playerOfSessionId === player.id
+                        ? "bg-gold text-white shadow-md"
+                        : "bg-white border border-gray-200 text-gray-700 hover:border-gold"
+                    )}
+                  >
+                    {playerOfSessionId === player.id && (
+                      <Star className="w-3 h-3 inline mr-1 fill-white" />
+                    )}
+                    {player.firstName} {player.lastName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="sticky bottom-4 pt-2">
             <Button

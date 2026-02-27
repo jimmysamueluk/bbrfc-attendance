@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import type { TrainingSession, AttendanceRecord, PlayerStats } from "@/types";
+import type { TrainingSession, AttendanceRecord, PlayerStats, PlayerOfSessionStats } from "@/types";
 
 export const trainingApi = {
   getSessions: async (teamId?: number): Promise<{ sessions: TrainingSession[]; pagination: any }> => {
@@ -17,6 +17,7 @@ export const trainingApi = {
   createSession: async (session: {
     teamId?: number;
     sessionDate: string;
+    sessionTime?: string;
     sessionType?: string;
     description?: string;
     duration?: number;
@@ -27,10 +28,12 @@ export const trainingApi = {
 
   recordAttendance: async (
     sessionId: number,
-    attendance: AttendanceRecord[]
+    attendance: AttendanceRecord[],
+    playerOfSessionId?: number | null
   ): Promise<{ session: TrainingSession }> => {
     const { data } = await apiClient.post(`/training/${sessionId}/attendance`, {
       attendance,
+      playerOfSessionId: playerOfSessionId || null,
     });
     return data;
   },
@@ -42,6 +45,15 @@ export const trainingApi = {
     const params: any = { days };
     if (teamId) params.teamId = teamId;
     const { data } = await apiClient.get("/training/stats/attendance", { params });
+    return data;
+  },
+
+  getPlayerOfSessionStats: async (
+    days: number = 365
+  ): Promise<{ leaderboard: PlayerOfSessionStats[]; period: any }> => {
+    const { data } = await apiClient.get("/training/stats/player-of-session", {
+      params: { days },
+    });
     return data;
   },
 };

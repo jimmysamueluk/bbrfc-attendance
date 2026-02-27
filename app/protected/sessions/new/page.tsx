@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/select";
 
 const sessionSchema = z.object({
   sessionDate: z.string().min(1, "Date is required"),
+  sessionTime: z.string().optional(),
   sessionType: z.string().min(1, "Session type is required"),
   teamId: z.string().optional(),
   description: z.string().optional(),
@@ -48,6 +49,7 @@ export default function NewSessionPage() {
     resolver: zodResolver(sessionSchema),
     defaultValues: {
       sessionDate: new Date().toISOString().split("T")[0],
+      sessionTime: "19:00",
       sessionType: "Training",
     },
   });
@@ -65,6 +67,7 @@ export default function NewSessionPage() {
   const onSubmit = (data: SessionForm) => {
     createMutation.mutate({
       sessionDate: new Date(data.sessionDate).toISOString(),
+      sessionTime: data.sessionTime || undefined,
       sessionType: data.sessionType,
       teamId: data.teamId ? parseInt(data.teamId) : undefined,
       description: data.description || undefined,
@@ -97,6 +100,13 @@ export default function NewSessionPage() {
           label="Date"
           error={errors.sessionDate?.message}
           {...register("sessionDate")}
+        />
+
+        <Input
+          id="sessionTime"
+          type="time"
+          label="Time"
+          {...register("sessionTime")}
         />
 
         <Select
