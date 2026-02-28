@@ -5,7 +5,9 @@ export interface User {
   firstName: string;
   lastName: string;
   position?: string | null;
+  registered?: boolean;
   teamId?: number | null;
+  team?: Team | null;
 }
 
 export interface Team {
@@ -13,6 +15,13 @@ export interface Team {
   name: string;
   ageGroup?: string | null;
   coachId?: number | null;
+}
+
+export interface SessionPlayerAward {
+  id: number;
+  sessionId: number;
+  playerId: number;
+  player: { id: number; firstName: string; lastName: string };
 }
 
 export interface TrainingSession {
@@ -25,6 +34,7 @@ export interface TrainingSession {
   intensity?: number | null;
   playerOfSessionId?: number | null;
   playerOfSession?: { id: number; firstName: string; lastName: string } | null;
+  playerAwards?: SessionPlayerAward[];
   team?: Team | null;
   coach?: { id: number; firstName: string; lastName: string };
   attendees?: TrainingAttendance[];
@@ -40,6 +50,7 @@ export interface TrainingAttendance {
     firstName: string;
     lastName: string;
     position?: string | null;
+    registered?: boolean;
   };
 }
 

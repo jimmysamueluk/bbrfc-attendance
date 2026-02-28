@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ClipboardList, BarChart3, Home } from "lucide-react";
+import { LogOut, ClipboardList, BarChart3, Home, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
 
 const navItems = [
   { href: "/protected/dashboard", label: "Sessions", icon: Home },
+  { href: "/protected/players", label: "Players", icon: Users },
   { href: "/protected/stats", label: "Stats", icon: BarChart3 },
 ];
 

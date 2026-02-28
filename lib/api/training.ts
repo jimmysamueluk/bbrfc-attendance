@@ -26,14 +26,24 @@ export const trainingApi = {
     return data;
   },
 
+  updateSession: async (
+    id: number,
+    updates: { description?: string }
+  ): Promise<{ session: TrainingSession }> => {
+    const { data } = await apiClient.put(`/training/${id}`, updates);
+    return data;
+  },
+
   recordAttendance: async (
     sessionId: number,
     attendance: AttendanceRecord[],
-    playerOfSessionId?: number | null
+    playerOfSessionIds?: number[],
+    description?: string
   ): Promise<{ session: TrainingSession }> => {
     const { data } = await apiClient.post(`/training/${sessionId}/attendance`, {
       attendance,
-      playerOfSessionId: playerOfSessionId || null,
+      playerOfSessionIds: playerOfSessionIds || [],
+      description,
     });
     return data;
   },

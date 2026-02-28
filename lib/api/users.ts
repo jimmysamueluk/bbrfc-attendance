@@ -26,4 +26,20 @@ export const usersApi = {
     });
     return data.user || data;
   },
+
+  toggleRegistration: async (userId: number): Promise<User> => {
+    const { data } = await apiClient.patch(`/users/${userId}/registration`);
+    return data.user;
+  },
+
+  bulkRegister: async (
+    players: { firstName: string; lastName: string; position?: string }[],
+    teamId?: number
+  ): Promise<{ created: number; failed: string[] }> => {
+    const { data } = await apiClient.post("/users/bulk-register", {
+      players,
+      teamId,
+    });
+    return data;
+  },
 };

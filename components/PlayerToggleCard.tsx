@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, X, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PlayerToggleCardProps {
@@ -8,6 +8,7 @@ interface PlayerToggleCardProps {
   firstName: string;
   lastName: string;
   position?: string | null;
+  registered?: boolean;
   present: boolean;
   onToggle: (playerId: number) => void;
 }
@@ -17,6 +18,7 @@ export function PlayerToggleCard({
   firstName,
   lastName,
   position,
+  registered,
   present,
   onToggle,
 }: PlayerToggleCardProps) {
@@ -31,9 +33,14 @@ export function PlayerToggleCard({
       )}
     >
       <div className="text-left">
-        <p className="font-medium text-gray-900">
-          {firstName} {lastName}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="font-medium text-gray-900">
+            {firstName} {lastName}
+          </p>
+          {registered === false && (
+            <ShieldAlert className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+          )}
+        </div>
         {position && (
           <p className="text-xs text-gray-500">{position}</p>
         )}
