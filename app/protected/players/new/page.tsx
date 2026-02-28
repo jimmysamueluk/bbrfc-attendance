@@ -79,10 +79,13 @@ export default function AddPlayerPage() {
   });
 
   const onSubmit = (data: PlayerForm) => {
-    const email = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}.${Date.now()}@bbrfc.player`;
+    const firstName = data.firstName.trim();
+    const lastName = data.lastName.trim();
+    const sanitized = `${firstName}.${lastName}`.toLowerCase().replace(/\s+/g, "");
+    const email = `${sanitized}.${Date.now()}@bbrfc.player`;
     createMutation.mutate({
-      firstName: data.firstName,
-      lastName: data.lastName,
+      firstName,
+      lastName,
       email,
       password: "player123",
       position: data.position || undefined,

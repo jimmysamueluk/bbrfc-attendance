@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { usersApi } from "@/lib/api/users";
+import { teamsApi } from "@/lib/api/teams";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ParsedPlayer {
@@ -18,8 +20,14 @@ export default function BulkUploadPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [parsed, setParsed] = useState<ParsedPlayer[] | null>(null);
   const [result, setResult] = useState<{ created: number; failed: string[] } | null>(null);
+
+  const { data: teams } = useQuery({
+    queryKey: ["teams"],
+    queryFn: teamsApi.getAll,
+  });
 
   const parsePlayers = () => {
     const lines = text
@@ -39,24 +47,36 @@ export default function BulkUploadPage() {
         position = line.substring(commaIdx + 1).trim() || undefined;
       }
 
-      const parts = namePart.split(/\s+/);
+      const parts = namePart.split(/\s+/).filter((p) => p.length > 0);
       if (parts.length >= 2) {
-        const firstName = parts[0];
-        const lastName = parts.slice(1).join(" ");
-        players.push({ firstName, lastName, position });
-      } else if (parts.length === 1) {
-        players.push({ firstName: parts[0], lastName: "" });
+        const firstName = parts[0].trim();
+        const lastName = parts.slice(1).join(" ").trim();
+        if (firstName && lastName) {
+          players.push({ firstName, lastName, position });
+        }
       }
     }
 
     setParsed(players);
   };
 
+  const [error, setError] = useState("");
+
   const uploadMutation = useMutation({
-    mutationFn: (players: ParsedPlayer[]) => usersApi.bulkRegister(players),
+    mutationFn: (players: ParsedPlayer[]) =>
+      usersApi.bulkRegister(players, selectedTeamId ? parseInt(selectedTeamId) : undefined),
     onSuccess: (data) => {
       setResult(data);
+      setError("");
       queryClient.invalidateQueries({ queryKey: ["players"] });
+    },
+    onError: (err: any) => {
+      const data = err.response?.data;
+      const message =
+        data?.error ||
+        data?.errors?.map((e: any) => e.msg).join(", ") ||
+        "Failed to add players. Please try again.";
+      setError(message);
     },
   });
 
@@ -79,6 +99,12 @@ export default function BulkUploadPage() {
           <p className="text-sm text-gray-500">Paste a list of player names</p>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       {result ? (
         <div className="space-y-4">
@@ -145,6 +171,20 @@ export default function BulkUploadPage() {
               Format: FirstName LastName or FirstName LastName, Position
             </p>
           </div>
+
+          {teams && teams.length > 0 && (
+            <Select
+              id="bulkTeamId"
+              label="Team"
+              placeholder="Select team"
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              options={teams.map((t) => ({
+                value: String(t.id),
+                label: t.name + (t.ageGroup ? ` (${t.ageGroup})` : ""),
+              }))}
+            />
+          )}
 
           <Button
             onClick={parsePlayers}
