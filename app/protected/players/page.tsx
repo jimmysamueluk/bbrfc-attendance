@@ -5,24 +5,31 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus, Upload, ShieldCheck, ShieldAlert } from "lucide-react";
 import { usersApi } from "@/lib/api/users";
+import { teamsApi } from "@/lib/api/teams";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
-const filters = ["All", "Registered", "Not Registered"] as const;
-type Filter = (typeof filters)[number];
+const regFilters = ["All", "Registered", "Not Registered"] as const;
+type RegFilter = (typeof regFilters)[number];
 
 export default function PlayersPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("All");
+  const [regFilter, setRegFilter] = useState<RegFilter>("All");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
 
   const { data: players, isLoading } = useQuery({
     queryKey: ["players"],
     queryFn: usersApi.getPlayers,
     staleTime: 0,
     refetchOnMount: "always",
+  });
+
+  const { data: teams } = useQuery({
+    queryKey: ["teams"],
+    queryFn: teamsApi.getAll,
   });
 
   const toggleMutation = useMutation({
@@ -33,13 +40,15 @@ export default function PlayersPage() {
   });
 
   const filtered = players?.filter((p) => {
-    if (filter === "Registered") return p.registered;
-    if (filter === "Not Registered") return !p.registered;
+    if (regFilter === "Registered" && !p.registered) return false;
+    if (regFilter === "Not Registered" && p.registered) return false;
+    if (teamFilter === "none" && p.teamId) return false;
+    if (teamFilter !== "all" && teamFilter !== "none" && p.teamId !== parseInt(teamFilter)) return false;
     return true;
   });
 
-  const registeredCount = players?.filter((p) => p.registered).length ?? 0;
-  const unregisteredCount = (players?.length ?? 0) - registeredCount;
+  const registeredCount = filtered?.filter((p) => p.registered).length ?? 0;
+  const unregisteredCount = (filtered?.length ?? 0) - registeredCount;
 
   return (
     <div className="space-y-4">
@@ -64,14 +73,32 @@ export default function PlayersPage() {
         </div>
       </div>
 
+      {/* Team filter */}
+      {teams && teams.length > 0 && (
+        <select
+          value={teamFilter}
+          onChange={(e) => setTeamFilter(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/20"
+        >
+          <option value="all">All Teams</option>
+          {teams.map((t) => (
+            <option key={t.id} value={String(t.id)}>
+              {t.name}
+            </option>
+          ))}
+          <option value="none">No Team</option>
+        </select>
+      )}
+
+      {/* Registration filter */}
       <div className="flex gap-2">
-        {filters.map((f) => (
+        {regFilters.map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => setRegFilter(f)}
             className={cn(
               "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-              filter === f
+              regFilter === f
                 ? "bg-burgundy text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             )}
@@ -81,9 +108,9 @@ export default function PlayersPage() {
         ))}
       </div>
 
-      {players && (
+      {filtered && (
         <p className="text-sm text-gray-500">
-          {registeredCount} registered · {unregisteredCount} not registered · {players.length} total
+          {registeredCount} registered · {unregisteredCount} not registered · {filtered.length} total
         </p>
       )}
 
@@ -94,9 +121,11 @@ export default function PlayersPage() {
       ) : !filtered || filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <p className="text-lg font-medium">
-            {filter === "All" ? "No players yet" : `No ${filter.toLowerCase()} players`}
+            {regFilter === "All" && teamFilter === "all"
+              ? "No players yet"
+              : "No matching players"}
           </p>
-          {filter === "All" && (
+          {regFilter === "All" && teamFilter === "all" && (
             <p className="text-sm mt-1">Add players to get started</p>
           )}
         </div>

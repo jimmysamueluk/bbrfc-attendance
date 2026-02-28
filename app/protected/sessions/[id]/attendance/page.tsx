@@ -47,20 +47,32 @@ export default function AttendancePage({
     queryFn: usersApi.getPlayers,
   });
 
+  // Filter players by session team
+  const session = sessionData?.session;
+  const existingAttendeeIds = new Set(
+    session?.attendees?.map((a) => a.playerId) ?? []
+  );
+  const teamPlayers = players?.filter((p) => {
+    if (!session?.team?.id) return true;
+    if (p.teamId === session.team.id) return true;
+    if (existingAttendeeIds.has(p.id)) return true;
+    return false;
+  });
+
   // Initialize attendance state from existing records
   useEffect(() => {
-    if (sessionData?.session?.attendees && players) {
+    if (sessionData?.session?.attendees && teamPlayers) {
       const existing: Record<number, boolean> = {};
-      players.forEach((p) => {
+      teamPlayers.forEach((p) => {
         existing[p.id] = false;
       });
       sessionData.session.attendees.forEach((a) => {
         existing[a.playerId] = a.present;
       });
       setAttendance(existing);
-    } else if (players) {
+    } else if (teamPlayers) {
       const initial: Record<number, boolean> = {};
-      players.forEach((p) => {
+      teamPlayers.forEach((p) => {
         initial[p.id] = false;
       });
       setAttendance(initial);
@@ -116,10 +128,10 @@ export default function AttendancePage({
   };
 
   const handleSelectAll = () => {
-    if (!players) return;
-    const allPresent = players.every((p) => attendance[p.id]);
-    const updated: Record<number, boolean> = {};
-    players.forEach((p) => {
+    if (!teamPlayers) return;
+    const allPresent = teamPlayers.every((p) => attendance[p.id]);
+    const updated: Record<number, boolean> = { ...attendance };
+    teamPlayers.forEach((p) => {
       updated[p.id] = !allPresent;
     });
     setAttendance(updated);
@@ -137,18 +149,17 @@ export default function AttendancePage({
   };
 
   const handleSave = () => {
-    if (!players) return;
-    const records: AttendanceRecord[] = players.map((p) => ({
+    if (!teamPlayers) return;
+    const records: AttendanceRecord[] = teamPlayers.map((p) => ({
       playerId: p.id,
       present: attendance[p.id] ?? false,
     }));
     saveMutation.mutate(records);
   };
 
-  const session = sessionData?.session;
   const isLoading = sessionLoading || playersLoading;
   const presentCount = Object.values(attendance).filter(Boolean).length;
-  const presentPlayers = players
+  const presentPlayers = teamPlayers
     ?.filter((p) => attendance[p.id])
     .sort((a, b) => a.lastName.localeCompare(b.lastName));
 
@@ -177,7 +188,7 @@ export default function AttendancePage({
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-burgundy" />
         </div>
-      ) : !players || players.length === 0 ? (
+      ) : !teamPlayers || teamPlayers.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <p className="text-lg font-medium">No players found</p>
           <p className="text-sm mt-1">Add players to start tracking attendance</p>
@@ -195,12 +206,12 @@ export default function AttendancePage({
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
               <span className="font-semibold text-burgundy">{presentCount}</span>{" "}
-              of {players.length} present
+              of {teamPlayers.length} present
             </p>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={handleSelectAll}>
                 <CheckCheck className="w-4 h-4 mr-1" />
-                {players.every((p) => attendance[p.id])
+                {teamPlayers.every((p) => attendance[p.id])
                   ? "Deselect All"
                   : "Select All"}
               </Button>
@@ -216,7 +227,7 @@ export default function AttendancePage({
           </div>
 
           <div className="space-y-2">
-            {players
+            {teamPlayers
               .sort((a, b) => a.lastName.localeCompare(b.lastName))
               .map((player) => (
                 <PlayerToggleCard
@@ -324,7 +335,7 @@ export default function AttendancePage({
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Attendance ({presentCount}/{players.length})
+                  Save Attendance ({presentCount}/{teamPlayers.length})
                 </>
               )}
             </Button>
