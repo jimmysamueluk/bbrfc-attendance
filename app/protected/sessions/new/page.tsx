@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { trainingApi } from "@/lib/api/training";
+import { analyticsApi } from "@/lib/api/analytics";
 import { teamsApi } from "@/lib/api/teams";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ export default function NewSessionPage() {
   const createMutation = useMutation({
     mutationFn: trainingApi.createSession,
     onSuccess: (data) => {
+      analyticsApi.trackFeature("create_session");
       router.push(`/protected/sessions/${data.session.id}/attendance`);
     },
     onError: (err: any) => {

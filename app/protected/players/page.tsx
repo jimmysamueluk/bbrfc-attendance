@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, UserPlus, Upload, ShieldCheck, ShieldAlert } from "lucide-react";
 import { usersApi } from "@/lib/api/users";
 import { teamsApi } from "@/lib/api/teams";
+import { analyticsApi } from "@/lib/api/analytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export default function PlayersPage() {
     mutationFn: (userId: number) => usersApi.toggleRegistration(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["players"] });
+      analyticsApi.trackFeature("toggle_registration");
     },
   });
 

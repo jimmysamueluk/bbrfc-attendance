@@ -20,6 +20,7 @@ import { PlayerToggleCard } from "@/components/PlayerToggleCard";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { analyticsApi } from "@/lib/api/analytics";
 import type { AttendanceRecord } from "@/types";
 
 export default function AttendancePage({
@@ -112,6 +113,7 @@ export default function AttendancePage({
       setTimeout(() => setSaved(false), 2000);
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      analyticsApi.trackFeature("save_attendance");
     },
   });
 

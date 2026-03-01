@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Header } from "@/components/Header";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
+import { analyticsApi } from "@/lib/api/analytics";
+import { getAnalyticsSessionId, clearAnalyticsSessionId } from "@/lib/hooks/useAnalytics";
 import { Loader2 } from "lucide-react";
 
 export default function ProtectedLayout({
@@ -13,6 +15,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, clearAuth, hydrate } = useAuthStore();
   const [hydrated, setHydrated] = useState(false);
 
@@ -34,7 +37,20 @@ export default function ProtectedLayout({
     }
   }, [hydrated, user, clearAuth, router]);
 
+  // Track page views on route changes
+  useEffect(() => {
+    if (hydrated && user && pathname) {
+      analyticsApi.trackPageView(pathname);
+    }
+  }, [pathname, hydrated, user]);
+
   const handleLogout = () => {
+    // End analytics session before clearing auth
+    const sessionId = getAnalyticsSessionId();
+    if (sessionId) {
+      analyticsApi.endSession(sessionId);
+      clearAnalyticsSessionId();
+    }
     clearAuth();
     router.push("/auth/login");
   };

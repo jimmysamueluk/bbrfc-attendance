@@ -12,6 +12,10 @@ import {
   TrendingUp,
   Minus,
   TrendingDown,
+  Activity,
+  Smartphone,
+  Monitor,
+  Tablet,
 } from "lucide-react";
 import { adminApi } from "@/lib/api/admin";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -31,6 +35,12 @@ export default function AdminPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-metrics", days],
     queryFn: () => adminApi.getMetrics(days),
+    enabled: user?.role === "admin",
+  });
+
+  const { data: analytics } = useQuery({
+    queryKey: ["analytics-dashboard"],
+    queryFn: () => adminApi.getAnalyticsDashboard(),
     enabled: user?.role === "admin",
   });
 
@@ -258,6 +268,149 @@ export default function AdminPage() {
                   </Card>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* App Usage Analytics */}
+          {analytics && (
+            <div className="space-y-3 border-t border-gray-200 pt-6">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-burgundy" />
+                <h2 className="font-semibold text-gray-900">App Usage</h2>
+              </div>
+
+              {/* Usage overview */}
+              <div className="grid grid-cols-2 gap-3">
+                <Card>
+                  <CardContent className="text-center py-4">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {analytics.activeSessions}
+                    </p>
+                    <p className="text-xs text-gray-500">Logins (24h)</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="text-center py-4">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {analytics.userActivity.length}
+                    </p>
+                    <p className="text-xs text-gray-500">Active Users (7d)</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Device breakdown */}
+              {analytics.deviceStats.length > 0 && (
+                <Card>
+                  <CardContent className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">Devices</h3>
+                    {analytics.deviceStats.map((d) => {
+                      const DeviceIcon =
+                        d.deviceType === "mobile"
+                          ? Smartphone
+                          : d.deviceType === "tablet"
+                          ? Tablet
+                          : Monitor;
+                      return (
+                        <div
+                          key={d.deviceType || "unknown"}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <DeviceIcon className="w-4 h-4" />
+                            <span className="capitalize">
+                              {d.deviceType || "Unknown"}
+                            </span>
+                          </div>
+                          <span className="font-medium">{d._count.id}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Top features */}
+              {analytics.topFeatures.length > 0 && (
+                <Card>
+                  <CardContent className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Top Features
+                    </h3>
+                    {analytics.topFeatures.map((f) => (
+                      <div
+                        key={f.featureName}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-gray-600">
+                          {f.featureName.replace(/_/g, " ")}
+                        </span>
+                        <span className="font-medium">
+                          {f._sum.usageCount ?? 0} uses
+                        </span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Top pages */}
+              {analytics.topPages.length > 0 && (
+                <Card>
+                  <CardContent className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Top Pages
+                    </h3>
+                    {analytics.topPages.map((p) => (
+                      <div
+                        key={p.page}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-gray-600 truncate max-w-[200px]">
+                          {p.page.replace("/protected/", "/")}
+                        </span>
+                        <span className="font-medium">
+                          {p._sum.visitCount ?? 0} views
+                        </span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Active users */}
+              {analytics.userActivity.length > 0 && (
+                <Card>
+                  <CardContent className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Most Active Users (7d)
+                    </h3>
+                    {analytics.userActivity.map((ua) => (
+                      <div
+                        key={ua.userId}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-gray-600">
+                          {ua.user
+                            ? `${ua.user.firstName} ${ua.user.lastName}`
+                            : `User #${ua.userId}`}
+                        </span>
+                        <span className="font-medium">
+                          {ua._count.id} sessions
+                        </span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {analytics.topFeatures.length === 0 &&
+                analytics.topPages.length === 0 &&
+                analytics.userActivity.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-4">
+                    No usage data yet. Data will appear as coaches use the app.
+                  </p>
+                )}
             </div>
           )}
         </>

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { usersApi } from "@/lib/api/users";
+import { analyticsApi } from "@/lib/api/analytics";
 import { teamsApi } from "@/lib/api/teams";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ export default function AddPlayerPage() {
   const createMutation = useMutation({
     mutationFn: usersApi.registerPlayer,
     onSuccess: (data) => {
+      analyticsApi.trackFeature("add_player");
       setSuccess(`${data.firstName || "Player"} added successfully!`);
       setError("");
       reset();

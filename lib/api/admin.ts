@@ -30,11 +30,38 @@ export interface AdminMetrics {
   }>;
 }
 
+export interface AnalyticsDashboard {
+  totalUsers: number;
+  activeSessions: number;
+  topFeatures: Array<{
+    featureName: string;
+    _sum: { usageCount: number | null };
+  }>;
+  topPages: Array<{
+    page: string;
+    _sum: { visitCount: number | null };
+  }>;
+  userActivity: Array<{
+    userId: number;
+    _count: { id: number };
+    user: { id: number; firstName: string; lastName: string; role: string } | null;
+  }>;
+  deviceStats: Array<{
+    deviceType: string | null;
+    _count: { id: number };
+  }>;
+}
+
 export const adminApi = {
   getMetrics: async (days: number = 30): Promise<AdminMetrics> => {
     const { data } = await apiClient.get("/admin/metrics", {
       params: { days },
     });
+    return data;
+  },
+
+  getAnalyticsDashboard: async (): Promise<AnalyticsDashboard> => {
+    const { data } = await apiClient.get("/analytics/dashboard");
     return data;
   },
 };

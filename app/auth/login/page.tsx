@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ClipboardList } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
+import { analyticsApi } from "@/lib/api/analytics";
+import { setAnalyticsSessionId } from "@/lib/hooks/useAnalytics";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,12 @@ export default function LoginPage() {
       }
 
       setAuth(user, token);
+
+      // Start analytics session (fire-and-forget)
+      analyticsApi.startSession().then((res) => {
+        setAnalyticsSessionId(res.sessionId);
+      }).catch(() => {});
+
       router.push("/protected/dashboard");
     } catch (err: any) {
       setError(

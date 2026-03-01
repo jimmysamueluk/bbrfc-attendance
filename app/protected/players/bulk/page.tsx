@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { usersApi } from "@/lib/api/users";
 import { teamsApi } from "@/lib/api/teams";
+import { analyticsApi } from "@/lib/api/analytics";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +70,7 @@ export default function BulkUploadPage() {
       setResult(data);
       setError("");
       queryClient.invalidateQueries({ queryKey: ["players"] });
+      analyticsApi.trackFeature("bulk_upload");
     },
     onError: (err: any) => {
       const data = err.response?.data;
