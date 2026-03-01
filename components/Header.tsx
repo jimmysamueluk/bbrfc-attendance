@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ClipboardList, BarChart3, Home, Users } from "lucide-react";
+import { LogOut, ClipboardList, BarChart3, Home, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/stores/authStore";
 
 interface HeaderProps {
   onLogout: () => void;
 }
 
-const navItems = [
+const baseNavItems = [
   { href: "/protected/dashboard", label: "Sessions", icon: Home },
   { href: "/protected/players", label: "Players", icon: Users },
   { href: "/protected/stats", label: "Stats", icon: BarChart3 },
@@ -17,6 +18,11 @@ const navItems = [
 
 export function Header({ onLogout }: HeaderProps) {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+
+  const navItems = user?.role === "admin"
+    ? [...baseNavItems, { href: "/protected/admin", label: "Admin", icon: Settings }]
+    : baseNavItems;
 
   return (
     <header className="bg-burgundy text-white sticky top-0 z-50">
